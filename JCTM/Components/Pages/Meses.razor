@@ -1,0 +1,40 @@
+﻿@page "/meses"
+@rendermode InteractiveServer
+<h3>meses</h3>
+
+<div>
+	<h3>Mes</h3>
+	<input type="number" @bind="mes" placeholder="Ingresa el mes..." />
+
+	<label>Año</label>
+	<input type="number" @bind="año" placeholder="Ingresa el año..." />
+	<button @onclick="Dias" class="btn-primary">Mostrar dias</button>
+	<h1>@result</h1>
+</div>
+@code {
+	private int mes { get; set; }
+	private int año { get; set; }
+	private string result { get; set; } = string.Empty;
+
+
+	private void Dias()
+	{
+		int dias;
+		if (mes == 2)
+		{
+			if ((año % 4 == 0 && año % 100 != 0) || (año % 400 == 0))
+				dias = 29;
+			else
+				dias = 28;
+		}
+		else if (mes == 4 || mes == 6 || mes == 9 || mes == 11)
+		{
+			dias = 30;
+		}
+		else
+		{
+			dias = 31;
+		}
+		result = $"El mes {mes} del {año} tiene {dias} cantidad de dias";
+	}
+}

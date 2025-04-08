@@ -1,0 +1,209 @@
+﻿@page "/SegundaParcial"  // Define la ruta de la página
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+
+<h3>Gestión de Productos</h3>
+
+@if (mostrarExistencias)  // Si está activado mostrar las existencias por departamento
+{
+    <h4>Existencias por Departamento</h4>
+    <ul>
+        @foreach (var dept in productos.GroupBy(p => p.Departamento))  // Agrupa por departamento
+        {
+            <li><b>@dept.Key</b>: @dept.Count() productos</li>
+            // Muestra el nombre del depto y el total de productos
+        }
+    </ul>
+    <button class="btn btn-primary" @onclick="MostrarListado">Listado</button>
+    // Regresa a la lista normal
+}
+else
+{
+    <!-- Formulario para agregar o editar un producto -->
+    <EditForm Model="@producto" OnValidSubmit="@GuardarProducto">
+        <DataAnnotationsValidator /> <!-- Habilita validación con anotaciones -->
+        <ValidationSummary /> <!-- Muestra errores generales de validación -->
+        <!-- Campo: Número de Inventario -->
+        <div class="mb-3">
+            <label>Número de Inventario:</label>
+            <InputNumber @bind-Value="producto.NumInventario" class="form-control" />
+            <ValidationMessage For="@(() => producto.NumInventario)" />
+        </div>
+
+        <!-- Campo: Nombre del Producto -->
+        <div class="mb-3">
+            <label>Nombre:</label>
+            <InputText @bind-Value="producto.Nombre" class="form-control" maxlength="200" />
+            <ValidationMessage For="@(() => producto.Nombre)" />
+        </div>
+
+        <!-- Campo: Departamento -->
+        <div class="mb-3">
+            <label>Departamento:</label>
+            <InputSelect @bind-Value="producto.Departamento" class="form-control">
+                <option value="">-- Seleccione --</option>
+                <option>Frutas</option>
+                <option>Verduras</option>
+                <option>Lácteos</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => producto.Departamento)" />
+        </div>
+
+        <!-- Mensaje de error si el número de inventario se repite -->
+        @if (!string.IsNullOrEmpty(mensajeError))
+        {
+            <div class="alert alert-danger">@mensajeError</div>
+        }
+
+        <!-- Botones para Guardar, Actualizar o Cancelar -->
+        @if (editando)
+        {
+            <button type="submit" class="btn btn-success">Actualizar</button>
+            <button type="button" class="btn btn-secondary" @onclick="CancelarEdicion">Cancelar</button>
+        }
+        else
+        {
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        }
+    </EditForm>
+
+    <!-- Tabla que muestra los productos guardados -->
+    <h4 class="mt-4">Lista de Productos</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Inventario</th>
+                <th>Nombre</th>
+                <th>Departamento</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in productos)
+            {
+                <tr>
+                    <td>@p.NumInventario</td>
+                    <td>@p.Nombre</td>
+                    <td>@p.Departamento</td>
+                    <td>
+                        <!-- Botones de Editar y Eliminar -->
+                        <button class="btn btn-warning btn-sm" @onclick="() => EditarProducto(p)">Editar</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => EliminarProducto(p)">Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Botón para ver resumen de existencias -->
+    <button class="btn btn-info" @onclick="MostrarExistencias">Existencias</button>
+}
+
+@code {
+    // Modelo de producto usado en el formulario
+    private Producto producto = new Producto();
+
+    // Lista de todos los productos agregados
+    private List<Producto> productos = new List<Producto>();
+
+    // Mensaje de error (como inventario duplicado)
+    private string mensajeError;
+
+    // Bandera para saber si estamos editando un producto
+    private bool editando = false;
+
+    // Bandera para alternar entre la vista de productos o existencias
+    private bool mostrarExistencias = false;
+
+    // Guardar o actualizar un producto
+    private void GuardarProducto()
+    {
+        mensajeError = string.Empty;
+
+        // Validar que no se repita el número de inventario al agregar (solo si no está editando)
+        if (!editando && productos.Any(p => p.NumInventario == producto.NumInventario))
+        {
+            mensajeError = "Error: El número de inventario ya existe.";
+            return;
+        }
+
+        if (editando)
+        {
+            // Buscar el producto existente por número de inventario y actualizarlo
+            var prodExistente = productos.FirstOrDefault(p => p.NumInventario == producto.NumInventario);
+            if (prodExistente != null)
+            {
+                prodExistente.Nombre = producto.Nombre;
+                prodExistente.Departamento = producto.Departamento;
+            }
+        }
+        else
+        {
+            // Agrega un nuevo producto
+            productos.Add(new Producto
+                {
+                    NumInventario = producto.NumInventario,
+                    Nombre = producto.Nombre,
+                    Departamento = producto.Departamento
+                });
+        }
+
+        // Limpia el formulario y termina el modo edición
+        producto = new Producto();
+        editando = false;
+        mensajeError = string.Empty;
+    }
+
+    // Elimina un producto de la lista
+    private void EliminarProducto(Producto p)
+    {
+        productos.Remove(p);
+    }
+
+    // Llena el formulario con los datos del producto a editar
+    private void EditarProducto(Producto p)
+    {
+        producto = new Producto
+            {
+                NumInventario = p.NumInventario,
+                Nombre = p.Nombre,
+                Departamento = p.Departamento
+            };
+        editando = true;
+    }
+
+    // Cancela la edición y limpia el formulario
+    private void CancelarEdicion()
+    {
+        producto = new Producto();
+        editando = false;
+        mensajeError = string.Empty;
+    }
+
+    // Cambia a la vista de existencias por departamento
+    private void MostrarExistencias()
+    {
+        mostrarExistencias = true;
+    }
+
+    // Vuelve a la vista normal de lista de productos
+    private void MostrarListado()
+    {
+        mostrarExistencias = false;
+    }
+
+    // Clase interna que representa un producto
+    public class Producto
+    {
+        [Required(ErrorMessage = "El número de inventario es obligatorio.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Debe ser un número positivo.")]
+        public int NumInventario { get; set; }
+
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        [StringLength(200, ErrorMessage = "Máximo 200 caracteres.")]
+        public string Nombre { get; set; }
+
+        [Required(ErrorMessage = "Seleccione un departamento.")]
+        public string Departamento { get; set; }
+    }
+}

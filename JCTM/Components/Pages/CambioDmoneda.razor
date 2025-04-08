@@ -1,0 +1,34 @@
+﻿@page "/CambioDmoneda"
+@rendermode InteractiveServer
+<header>
+    <h2>Cambio de moneda</h2>
+</header>
+
+<div>
+    <div class="container-fluid">
+        <label>Coloca la cantidad</label>
+        <input type="number" @bind="Pesos" placeholder="Ingresa la cantidad..." />
+        <button class="btn btn-primary" @onclick="Calcular">Calcular</button>
+    </div>
+
+    <div>
+        <label>Dólares: @Dolares</label>
+        <label>Euros: @Euros</label>
+        <label>Libras: @Libras</label>
+    </div>
+</div>
+
+@code {
+    private decimal Pesos { get; set; }
+    private decimal Dolares { get; set; }
+    private decimal Euros { get; set; }
+    private decimal Libras { get; set; }
+
+    private void Calcular() 
+    {
+        Dolares = Pesos * 0.058m;
+        Euros = Pesos * 0.053m;
+        Libras = Pesos * 0.045m;
+    }
+
+}

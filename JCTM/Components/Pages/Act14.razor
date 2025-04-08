@@ -1,0 +1,198 @@
+﻿@page "/Act14"
+@rendermode InteractiveServer
+<h3 class="title">Lista de Canciones</h3>
+<div class="controls">
+	<input class="input" @bind="newTitle" placeholder="Agregar canción" />
+	<button class="button add" @onclick="AddSong">Agregar</button>
+</div>
+
+<div class="controls">
+	<input class="input" @bind="filterText" placeholder="Filtrar canciones" />
+	<button class="button filter" @onclick="ApplyFilter">Filtrar</button>
+</div>
+<div class="controls">
+	<button class="button sort" @onclick="SortAscending">Orden Ascendente</button>
+	<button class="button sort" @onclick="SortDescending">Orden Descendente</button>
+</div>
+<ul class="song-list">
+	@foreach (var song in filteredSongs)
+	{
+		<li class="song-item">
+			@if (editingTitle == song)
+			{
+				<input class="input" @bind="editedTitle" />
+				<button class="button save" @onclick="() => SaveEdit(song)">Guardar</button>
+				<button class="button cancel" @onclick="CancelEdit">Cancelar</button>
+			}
+			else
+			{
+				<span class="song-title">@song</span>
+				<button class="button edit" @onclick="() => EditSong(song)">Editar</button>
+				<button class="button delete" @onclick="() =>
+RemoveSong(song)">
+					Eliminar
+				</button>
+			}
+		</li>
+	}
+</ul>
+<style>
+	.title {
+		font-size: 24px;
+		font-weight: bold;
+		text-align: center;
+	}
+
+	.controls {
+		margin: 10px 0;
+		text-align: center;
+	}
+
+	.input {
+		padding: 8px;
+		margin-right: 5px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+	}
+
+	.button {
+		padding: 8px 12px;
+		border: none;
+		border-radius: 5px;
+		cursor: pointer;
+		margin: 2px;
+	}
+
+	.add {
+		background-color: #4CAF50;
+		color: white;
+	}
+
+	.filter {
+		background-color: #2196F3;
+		color: white;
+	}
+
+	.sort {
+		background-color: #FFC107;
+		color: black;
+	}
+
+	.edit {
+		background-color: #FF9800;
+		color: white;
+	}
+
+	.delete {
+		background-color: #F44336;
+		color: white;
+	}
+
+	.save {
+		background-color: #4CAF50;
+		color: white;
+	}
+
+	.cancel {
+		background-color: #9E9E9E;
+		color: white;
+	}
+
+	.song-list {
+		list-style-type: none;
+		padding: 0;
+		text-align: center;
+	}
+
+	.song-item {
+		padding: 10px;
+		background-color: #f9f9f9;
+		margin: 5px auto;
+		width: 50%;
+		border-radius: 5px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.song-title {
+		flex-grow: 1;
+		text-align: left;
+		padding-left: 10px;
+	}
+</style>
+@code {
+	private string[] songs = new string[0];
+	private string[] filteredSongs = new string[0];
+	private string newTitle = "";
+	private string filterText = "";
+	private string? editingTitle;
+	private string editedTitle = "";
+	private void AddSong()
+	{
+		if (!string.IsNullOrWhiteSpace(newTitle) && !Array.Exists(songs, s => s == newTitle))
+		{
+
+			Array.Resize(ref songs, songs.Length + 1);
+			songs[^1] = newTitle;
+			newTitle = "";
+			ApplyFilter();
+		}
+	}
+	private void RemoveSong(string song)
+	{
+		int index = Array.IndexOf(songs, song);
+		if (index != -1)
+		{
+			for (int i = index; i < songs.Length - 1; i++)
+			{
+				songs[i] = songs[i + 1];
+			}
+			Array.Resize(ref songs, songs.Length - 1);
+			ApplyFilter();
+		}
+	}
+	private void EditSong(string song)
+	{
+		editingTitle = song;
+		editedTitle = song;
+	}
+	private void SaveEdit(string oldTitle)
+	{
+		int index = Array.IndexOf(songs, oldTitle);
+		if (!string.IsNullOrWhiteSpace(editedTitle) && !Array.Exists(songs, s => s == editedTitle)
+		&& index != -1)
+		{
+			songs[index] = editedTitle;
+		}
+		CancelEdit();
+	}
+	private void CancelEdit()
+	{
+		editingTitle = null;
+		editedTitle = "";
+	}
+	private void SortAscending()
+	{
+		Array.Sort(songs);
+		ApplyFilter();
+
+	}
+	private void SortDescending()
+	{
+		Array.Sort(songs, (a, b) => b.CompareTo(a));
+		ApplyFilter();
+	}
+	private void ApplyFilter()
+	{
+		if (string.IsNullOrWhiteSpace(filterText))
+		{
+			filteredSongs = (string[])songs.Clone();
+		}
+		else
+		{
+			filteredSongs = Array.FindAll(songs, s => s.Contains(filterText,
+			StringComparison.OrdinalIgnoreCase));
+		}
+	}
+}
